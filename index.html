@@ -1,73 +1,405 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>麻雀21 | CPU対戦</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MAHJONG21 | 麻雀CPU対戦</title>
+
+  <meta name="theme-color" content="#10243a">
+  <meta name="description" content="CPUレベル1～21に対応した麻雀ゲーム">
+
+  <link rel="stylesheet" href="./style.css?v=10">
+
+  <style>
+    body {
+      margin: 0;
+      background: #071426;
+      color: white;
+      font-family: Arial, "Noto Sans JP", sans-serif;
+    }
+
+    header {
+      background: #10243a;
+      padding: 18px;
+      text-align: center;
+      border-bottom: 2px solid #294765;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      color: #b9cde2;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 15px;
+    }
+
+    .panel {
+      background: #10243a;
+      border: 1px solid #294765;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .cpu-select-area {
+      text-align: center;
+    }
+
+    #cpuLevel {
+      width: 100%;
+      max-width: 350px;
+      padding: 12px;
+      font-size: 17px;
+      border-radius: 8px;
+      background: white;
+      color: black;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin: 4px;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .main-button {
+      background: #2196f3;
+      color: white;
+    }
+
+    .sub-button {
+      background: #294765;
+      color: white;
+    }
+
+    .game-status {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .status-box {
+      background: #071426;
+      padding: 12px;
+      border-radius: 8px;
+      min-width: 100px;
+    }
+
+    .cpu-area {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .cpu-box {
+      background: #071426;
+      border: 1px solid #294765;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .cpu-box h3 {
+      margin-top: 0;
+      font-size: 16px;
+    }
+
+    .tiles {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3px;
+      min-height: 35px;
+    }
+
+    .tile {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: #111;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      width: 32px;
+      height: 43px;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 0;
+      margin: 1px;
+    }
+
+    .hidden-tile {
+      background: #c5d7e8;
+      color: #294765;
+    }
+
+    .river-section {
+      margin: 10px 0;
+      padding: 10px;
+      background: #071426;
+      border-radius: 8px;
+    }
+
+    .river-title {
+      margin-bottom: 8px;
+      color: #b9cde2;
+      font-size: 14px;
+    }
+
+    .river-tiles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+
+    .river-tile {
+      background: white;
+      color: black;
+      padding: 5px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    #message {
+      background: #071426;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      color: #ffd54f;
+      min-height: 24px;
+    }
+
+    .control-area {
+      text-align: center;
+    }
+
+    .hand-area {
+      text-align: center;
+    }
+
+    footer {
+      text-align: center;
+      color: #8ca6c0;
+      padding: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .cpu-area {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 23px;
+      }
+
+      .tile {
+        width: 27px;
+        height: 38px;
+        font-size: 11px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
 <header>
-  <h1>麻雀21</h1>
-  <p>CPU対戦・レベル1～21</p>
+  <h1>MAHJONG21</h1>
+  <p>麻雀 CPU 対戦ゲーム</p>
 </header>
 
-<div class="settings">
-  <label>CPUレベル</label>
-  <select id="cpuLevel"></select>
-  <button id="startBtn">対局開始</button>
-  <button id="resetBtn">局をやり直す</button>
-</div>
+<main>
 
-<main class="mahjongTable">
+  <!-- CPUレベル選択 -->
+  <section class="panel cpu-select-area">
 
-  <div class="cpu cpu-north">
-    <h3>CPU 北</h3>
-    <p id="scoreNorth">25000点</p>
-    <div id="handNorth"></div>
-  </div>
+    <h2>CPU難易度選択</h2>
 
-  <div class="cpu cpu-west">
-    <h3>CPU 西</h3>
-    <p id="scoreWest">25000点</p>
-    <div id="handWest"></div>
-  </div>
+    <label for="cpuLevel">対戦するCPUのレベル：</label>
 
-  <div class="cpu cpu-east">
-    <h3>CPU 東</h3>
-    <p id="scoreEast">25000点</p>
-    <div id="handEast"></div>
-  </div>
+    <br><br>
 
-  <div class="centerInfo">
-    <h2 id="round">東一局</h2>
-    <p>残り牌：<span id="remaining">70</span></p>
-    <p id="turnInfo">対局開始してください</p>
+    <select id="cpuLevel">
+      <option value="1">CPU Lv.1（入門）</option>
+      <option value="2">CPU Lv.2</option>
+      <option value="3">CPU Lv.3</option>
+      <option value="4">CPU Lv.4</option>
+      <option value="5">CPU Lv.5（初級）</option>
+      <option value="6">CPU Lv.6</option>
+      <option value="7">CPU Lv.7</option>
+      <option value="8">CPU Lv.8</option>
+      <option value="9">CPU Lv.9</option>
+      <option value="10">CPU Lv.10（中級）</option>
+      <option value="11">CPU Lv.11</option>
+      <option value="12">CPU Lv.12</option>
+      <option value="13">CPU Lv.13</option>
+      <option value="14">CPU Lv.14</option>
+      <option value="15">CPU Lv.15（上級）</option>
+      <option value="16">CPU Lv.16</option>
+      <option value="17">CPU Lv.17</option>
+      <option value="18">CPU Lv.18</option>
+      <option value="19">CPU Lv.19</option>
+      <option value="20">CPU Lv.20（強豪）</option>
+      <option value="21">CPU Lv.21（最強）</option>
+    </select>
+
+    <br><br>
+
+    <button id="startBtn" class="main-button">
+      ゲーム開始
+    </button>
+
+    <button id="resetBtn" class="sub-button">
+      リセット
+    </button>
+
+  </section>
+
+  <!-- ゲーム情報 -->
+  <section class="panel">
+
+    <h2>ゲーム情報</h2>
+
+    <div class="game-status">
+
+      <div class="status-box">
+        残り牌
+        <div id="remaining">0</div>
+      </div>
+
+      <div class="status-box">
+        局
+        <div id="round">1</div>
+      </div>
+
+      <div class="status-box">
+        手番
+        <div id="turnInfo">開始前</div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- CPU -->
+  <section class="panel">
+
+    <h2>CPUプレイヤー</h2>
+
+    <div class="cpu-area">
+
+      <div class="cpu-box">
+        <h3>CPU北</h3>
+        <div id="handNorth" class="tiles"></div>
+        <p>点数：<span id="scoreNorth">25000</span></p>
+      </div>
+
+      <div class="cpu-box">
+        <h3>CPU西</h3>
+        <div id="handWest" class="tiles"></div>
+        <p>点数：<span id="scoreWest">25000</span></p>
+      </div>
+
+      <div class="cpu-box">
+        <h3>CPU東</h3>
+        <div id="handEast" class="tiles"></div>
+        <p>点数：<span id="scoreEast">25000</span></p>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- 河 -->
+  <section class="panel">
+
+    <h2>捨て牌</h2>
+
     <div id="river"></div>
-  </div>
 
-  <div class="player">
-    <h2>あなた</h2>
-    <p id="playerScore">25000点</p>
-    <div id="playerHand" class="hand"></div>
-  </div>
+  </section>
+
+  <!-- 自分の手牌 -->
+  <section class="panel hand-area">
+
+    <h2>あなたの手牌</h2>
+
+    <div id="playerHand" class="tiles"></div>
+
+    <p>
+      点数：
+      <strong id="playerScore">25000</strong>
+    </p>
+
+  </section>
+
+  <!-- 操作 -->
+  <section class="panel control-area">
+
+    <h2>操作</h2>
+
+    <button id="drawBtn" class="main-button">
+      ツモ
+    </button>
+
+    <button id="reachBtn" class="sub-button">
+      リーチ
+    </button>
+
+    <button id="ronBtn" class="sub-button">
+      ロン
+    </button>
+
+    <button id="tsumoBtn" class="sub-button">
+      ツモ和了
+    </button>
+
+    <button id="sortBtn" class="sub-button">
+      手牌整理
+    </button>
+
+  </section>
+
+  <!-- メッセージ -->
+  <section class="panel">
+
+    <h2>ゲームメッセージ</h2>
+
+    <div id="message">
+      CPUレベルを選択してゲーム開始してください。
+    </div>
+
+  </section>
 
 </main>
 
-<div class="controls">
-  <button id="drawBtn">ツモ</button>
-  <button id="reachBtn">リーチ</button>
-  <button id="ronBtn">ロン</button>
-  <button id="tsumoBtn">ツモ和了</button>
-  <button id="sortBtn">手牌整理</button>
-</div>
+<footer>
+  MAHJONG21
+  <br>
+  CPU Level 1 - 21
+</footer>
 
-<div id="message">CPUレベルを選んで対局開始してください。</div>
+<!-- JavaScript -->
 
-<script src="mahjong.js"></script>
-<script src="cpu.js"></script>
-<script src="app.js"></script>
+<script src="./mahjong.js?v=10"></script>
+<script src="./cpu.js?v=10"></script>
+<script src="./app.js?v=10"></script>
 
 </body>
 </html>
