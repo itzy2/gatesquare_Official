@@ -4,273 +4,70 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>麻雀21 | CPU対戦</title>
-
-<style>
-body {
-  margin: 0;
-  background: #071426;
-  color: white;
-  font-family: "Yu Gothic", sans-serif;
-}
-
-header {
-  padding: 20px;
-  text-align: center;
-  background: #10243a;
-  border-bottom: 3px solid gold;
-}
-
-h1 {
-  color: gold;
-  font-size: 40px;
-}
-
-main {
-  max-width: 1100px;
-  margin: auto;
-  padding: 20px;
-}
-
-.table {
-  background: #087345;
-  border: 12px solid #49301c;
-  border-radius: 20px;
-  padding: 20px;
-  min-height: 450px;
-}
-
-.player {
-  background: #10243a;
-  padding: 12px;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.center {
-  text-align: center;
-  margin: 30px;
-  font-size: 24px;
-}
-
-.hand {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 30px;
-}
-
-.tile {
-  background: #fff;
-  color: black;
-  border: 1px solid #aaa;
-  border-radius: 5px;
-  padding: 12px;
-  font-size: 25px;
-  cursor: pointer;
-}
-
-button {
-  background: #1459b5;
-  color: white;
-  border: 1px solid #6da7ff;
-  border-radius: 8px;
-  padding: 12px;
-  cursor: pointer;
-  margin: 5px;
-}
-
-select {
-  padding: 10px;
-  font-size: 16px;
-}
-
-.controls {
-  text-align: center;
-  margin-top: 20px;
-}
-
-#message {
-  background: #10243a;
-  padding: 15px;
-  margin-top: 20px;
-  border-radius: 10px;
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
 <header>
-<h1>麻雀21</h1>
-<p>CPU対戦・レベル1～21</p>
+  <h1>麻雀21</h1>
+  <p>CPU対戦・レベル1～21</p>
 </header>
 
-<main>
-
-<div class="table">
-
-<div class="player">
-CPU 東<br>
-Lv.10<br>
-25000点
+<div class="settings">
+  <label>CPUレベル</label>
+  <select id="cpuLevel"></select>
+  <button id="startBtn">対局開始</button>
+  <button id="resetBtn">局をやり直す</button>
 </div>
 
-<div class="center">
-<h2>東一局</h2>
-<p>残り牌：<span id="remain">70</span></p>
-</div>
+<main class="mahjongTable">
 
-<div class="player">
-CPU 西・北
-</div>
+  <div class="cpu cpu-north">
+    <h3>CPU 北</h3>
+    <p id="scoreNorth">25000点</p>
+    <div id="handNorth"></div>
+  </div>
 
-<div class="player" style="margin-top:20px">
-あなた<br>
-25000点
-</div>
+  <div class="cpu cpu-west">
+    <h3>CPU 西</h3>
+    <p id="scoreWest">25000点</p>
+    <div id="handWest"></div>
+  </div>
 
-<div class="hand" id="hand"></div>
+  <div class="cpu cpu-east">
+    <h3>CPU 東</h3>
+    <p id="scoreEast">25000点</p>
+    <div id="handEast"></div>
+  </div>
 
-</div>
+  <div class="centerInfo">
+    <h2 id="round">東一局</h2>
+    <p>残り牌：<span id="remaining">70</span></p>
+    <p id="turnInfo">対局開始してください</p>
+    <div id="river"></div>
+  </div>
 
-<div class="controls">
-
-<label>CPUレベル：</label>
-
-<select id="level">
-</select>
-
-<button onclick="newGame()">対局開始</button>
-
-<button onclick="drawTile()">ツモ</button>
-
-<button onclick="sortHand()">手牌整理</button>
-
-</div>
-
-<div id="message">
-対局開始を押してください。
-</div>
+  <div class="player">
+    <h2>あなた</h2>
+    <p id="playerScore">25000点</p>
+    <div id="playerHand" class="hand"></div>
+  </div>
 
 </main>
 
-<script>
+<div class="controls">
+  <button id="drawBtn">ツモ</button>
+  <button id="reachBtn">リーチ</button>
+  <button id="ronBtn">ロン</button>
+  <button id="tsumoBtn">ツモ和了</button>
+  <button id="sortBtn">手牌整理</button>
+</div>
 
-let wall = [];
-let hand = [];
-let remain = 70;
+<div id="message">CPUレベルを選んで対局開始してください。</div>
 
-const level = document.getElementById("level");
-
-for(let i=1;i<=21;i++){
-  let option=document.createElement("option");
-  option.value=i;
-  option.textContent="Lv."+i;
-  level.appendChild(option);
-}
-
-function createTiles(){
-
-  let tiles=[];
-
-  for(let s of ["m","p","s"]){
-    for(let n=1;n<=9;n++){
-      for(let i=0;i<4;i++){
-        tiles.push(s+n);
-      }
-    }
-  }
-
-  for(let h of ["東","南","西","北","白","發","中"]){
-    for(let i=0;i<4;i++){
-      tiles.push(h);
-    }
-  }
-
-  return tiles.sort(()=>Math.random()-0.5);
-}
-
-function newGame(){
-
-  wall=createTiles();
-
-  hand=wall.splice(0,13);
-
-  remain=wall.length;
-
-  render();
-
-  document.getElementById("message").textContent=
-  "対局開始！あなたの番です。";
-
-}
-
-function drawTile(){
-
-  if(wall.length===0){
-    document.getElementById("message").textContent=
-    "山がなくなりました。";
-    return;
-  }
-
-  hand.push(wall.pop());
-
-  remain=wall.length;
-
-  render();
-
-  document.getElementById("message").textContent=
-  "ツモしました。捨てる牌を選んでください。";
-
-}
-
-function discard(index){
-
-  hand.splice(index,1);
-
-  render();
-
-  document.getElementById("message").textContent=
-  "牌を捨てました。";
-
-}
-
-function render(){
-
-  document.getElementById("remain").textContent=remain;
-
-  const area=document.getElementById("hand");
-
-  area.innerHTML="";
-
-  hand.forEach((tile,index)=>{
-
-    const button=document.createElement("button");
-
-    button.className="tile";
-
-    button.textContent=tile;
-
-    button.onclick=()=>discard(index);
-
-    area.appendChild(button);
-
-  });
-
-}
-
-function sortHand(){
-
-  hand.sort();
-
-  render();
-
-}
-
-newGame();
-
-</script>
+<script src="mahjong.js"></script>
+<script src="cpu.js"></script>
+<script src="app.js"></script>
 
 </body>
 </html>
