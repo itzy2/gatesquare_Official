@@ -186,3 +186,21 @@ button:disabled {
     font-size: 30px;
   }
 }
+
+.cpu-select-area {
+  margin: 15px 0;
+  padding: 12px;
+  background: #152b45;
+  border-radius: 10px;
+  color: white;
+  text-align: center;
+}
+
+#cpuLevel {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  background: white;
+  color: black;
+  cursor: pointer;
+}
