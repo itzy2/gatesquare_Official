@@ -1,443 +1,876 @@
-// ======================================
-// 麻雀21 - ゲーム本体
-// ======================================
+/* =====================================================
+   MAHJONG21 - app.js
+   CPUレベル1～21対応
+   ===================================================== */
 
-const Game = (() => {
+(() => {
+  "use strict";
 
-  let wall = [];
-  let players = [];
-  let currentPlayer = 0;
-  let remaining = 0;
-  let round = 1;
-  let started = false;
-  let playerHasDrawn = false;
-  let playerReach = false;
-  let busy = false;
+  /* =========================
+     DOM取得
+  ========================= */
 
-  const $ = id => document.getElementById(id);
+  const $ = (id) => document.getElementById(id);
 
-  // プレイヤー作成
+  const cpuLevelSelect = $("cpuLevel");
+  const startBtn = $("startBtn");
+  const resetBtn = $("resetBtn");
+  const drawBtn = $("drawBtn");
+  const reachBtn = $("reachBtn");
+  const ronBtn = $("ronBtn");
+  const tsumoBtn = $("tsumoBtn");
+  const sortBtn = $("sortBtn");
+
+  const playerHandElement = $("playerHand");
+  const handNorthElement = $("handNorth");
+  const handWestElement = $("handWest");
+  const handEastElement = $("handEast");
+
+  const remainingElement = $("remaining");
+  const roundElement = $("round");
+  const turnInfoElement = $("turnInfo");
+  const riverElement = $("river");
+  const messageElement = $("message");
+
+  /* =========================
+     ゲーム設定
+  ========================= */
+
+  const PLAYER_COUNT = 4;
+  const INITIAL_HAND_SIZE = 13;
+
+  const GameState = {
+    started: false,
+    busy: false,
+
+    players: [],
+    wall: [],
+    rivers: [[], [], [], []],
+
+    currentPlayer: 0,
+    remaining: 0,
+
+    round: 1,
+    turn: 0,
+
+    lastDraw: null,
+    lastDiscard: null,
+
+    reached: false
+  };
+
+  /* =========================
+     CPUレベル設定
+  ========================= */
+
+  function setupCpuLevels() {
+    if (!cpuLevelSelect) return;
+
+    cpuLevelSelect.innerHTML = "";
+
+    for (let level = 1; level <= 21; level++) {
+      const option = document.createElement("option");
+
+      option.value = String(level);
+
+      let label = "";
+
+      if (level === 1) label = "（入門）";
+      if (level === 5) label = "（初級）";
+      if (level === 10) label = "（中級）";
+      if (level === 15) label = "（上級）";
+      if (level === 20) label = "（強豪）";
+      if (level === 21) label = "（最強）";
+
+      option.textContent = `CPU Lv.${level}${label}`;
+
+      cpuLevelSelect.appendChild(option);
+    }
+
+    cpuLevelSelect.value = "1";
+  }
+
+  function getCpuLevel() {
+    const level = Number(cpuLevelSelect?.value || 1);
+
+    return Math.max(1, Math.min(21, level));
+  }
+
+  /* =========================
+     プレイヤー作成
+  ========================= */
+
   function createPlayers() {
-
-    const level = Number($("cpuLevel").value);
+    const level = getCpuLevel();
 
     return [
       {
         name: "あなた",
-        human: true,
+        type: "human",
+        level: 0,
         hand: [],
-        river: [],
         score: 25000,
-        reach: false
+        reached: false,
+        discards: []
       },
       {
-        name: "CPU 東",
-        human: false,
+        name: "CPU北",
+        type: "cpu",
         level,
         hand: [],
-        river: [],
         score: 25000,
-        reach: false
+        reached: false,
+        discards: []
       },
       {
-        name: "CPU 西",
-        human: false,
+        name: "CPU西",
+        type: "cpu",
         level,
         hand: [],
-        river: [],
         score: 25000,
-        reach: false
+        reached: false,
+        discards: []
       },
       {
-        name: "CPU 北",
-        human: false,
+        name: "CPU東",
+        type: "cpu",
         level,
         hand: [],
-        river: [],
         score: 25000,
-        reach: false
+        reached: false,
+        discards: []
       }
     ];
   }
 
-  // メッセージ
+  /* =========================
+     メッセージ表示
+  ========================= */
+
   function message(text) {
-    $("message").textContent = text;
+    if (messageElement) {
+      messageElement.textContent = text;
+    }
   }
 
-  // 対局開始
+  /* =========================
+     牌山作成
+  ========================= */
+
+  function createWall() {
+    if (typeof Mahjong !== "undefined" &&
+        typeof Mahjong.createWall === "function") {
+      const wall = Mahjong.createWall();
+
+      if (typeof Mahjong.shuffle === "function") {
+        Mahjong.shuffle(wall);
+      }
+
+      return wall;
+    }
+
+    throw new Error(
+      "Mahjong.createWall() が見つかりません。mahjong.jsを確認してください。"
+    );
+  }
+
+  /* =========================
+     ゲーム開始
+  ========================= */
+
   function startGame() {
+    try {
+      GameState.started = true;
+      GameState.busy = false;
 
-    wall = Mahjong.createWall();
+      GameState.players = createPlayers();
+      GameState.wall = createWall();
 
-    players = createPlayers();
+      GameState.rivers = [[], [], [], []];
 
-    currentPlayer = 0;
-    round = 1;
-    remaining = wall.length;
-    started = true;
-    playerHasDrawn = false;
-    playerReach = false;
-    busy = false;
+      GameState.currentPlayer = 0;
+      GameState.remaining = GameState.wall.length;
 
-    // 配牌
-    for (let i = 0; i < 13; i++) {
-      for (const player of players) {
-        player.hand.push(wall.pop());
+      GameState.turn = 0;
+      GameState.lastDraw = null;
+      GameState.lastDiscard = null;
+      GameState.reached = false;
+
+      // 全員に13枚配る
+      for (let i = 0; i < PLAYER_COUNT; i++) {
+        GameState.players[i].hand = [];
+
+        for (let j = 0; j < INITIAL_HAND_SIZE; j++) {
+          GameState.players[i].hand.push(drawTileFromWall());
+        }
+      }
+
+      // 最初はプレイヤーがツモる
+      GameState.currentPlayer = 0;
+
+      renderAll();
+
+      message(
+        `ゲーム開始！ CPUレベル ${getCpuLevel()} で対戦します。`
+      );
+
+      drawBtn && (drawBtn.disabled = false);
+      reachBtn && (reachBtn.disabled = false);
+      ronBtn && (ronBtn.disabled = false);
+      tsumoBtn && (tsumoBtn.disabled = false);
+
+      // プレイヤーの最初のツモ
+      playerDraw();
+
+    } catch (error) {
+      console.error(error);
+      message("ゲーム開始エラー：" + error.message);
+    }
+  }
+
+  /* =========================
+     牌山からツモ
+  ========================= */
+
+  function drawTileFromWall() {
+    if (GameState.wall.length === 0) {
+      return null;
+    }
+
+    const tile = GameState.wall.pop();
+
+    GameState.remaining = GameState.wall.length;
+
+    return tile;
+  }
+
+  /* =========================
+     プレイヤーツモ
+  ========================= */
+
+  function playerDraw() {
+    if (!GameState.started || GameState.busy) return;
+
+    if (GameState.currentPlayer !== 0) return;
+
+    if (GameState.remaining <= 0) {
+      endGame();
+      return;
+    }
+
+    const player = GameState.players[0];
+
+    const tile = drawTileFromWall();
+
+    if (tile === null) {
+      endGame();
+      return;
+    }
+
+    player.hand.push(tile);
+
+    GameState.lastDraw = tile;
+    GameState.turn++;
+
+    renderAll();
+
+    message("ツモ！ 牌を選んで捨ててください。");
+
+    checkTsumoButton();
+  }
+
+  /* =========================
+     プレイヤー打牌
+  ========================= */
+
+  function playerDiscard(index) {
+    if (!GameState.started || GameState.busy) return;
+
+    if (GameState.currentPlayer !== 0) return;
+
+    const player = GameState.players[0];
+
+    if (index < 0 || index >= player.hand.length) return;
+
+    const tile = player.hand.splice(index, 1)[0];
+
+    GameState.rivers[0].push(tile);
+    GameState.lastDiscard = tile;
+
+    GameState.reached = false;
+
+    renderAll();
+
+    message("あなた：" + tileName(tile) + " を捨てました。");
+
+    // CPUの順番へ
+    GameState.currentPlayer = 1;
+
+    cpuTurn();
+  }
+
+  /* =========================
+     CPUターン
+  ========================= */
+
+  async function cpuTurn() {
+    if (!GameState.started || GameState.busy) return;
+
+    GameState.busy = true;
+
+    try {
+      for (let seat = 1; seat <= 3; seat++) {
+        if (GameState.remaining <= 0) {
+          endGame();
+          return;
+        }
+
+        GameState.currentPlayer = seat;
+
+        const cpu = GameState.players[seat];
+
+        message(cpu.name + " がツモっています…");
+
+        renderAll();
+
+        await delay(500);
+
+        // CPUがツモ
+        const draw = drawTileFromWall();
+
+        if (draw === null) {
+          endGame();
+          return;
+        }
+
+        cpu.hand.push(draw);
+
+        GameState.lastDraw = draw;
+
+        renderAll();
+
+        await delay(500);
+
+        // CPUが打牌
+        const discardIndex = chooseCpuDiscard(cpu);
+
+        const discard = cpu.hand.splice(discardIndex, 1)[0];
+
+        GameState.rivers[seat].push(discard);
+
+        GameState.lastDiscard = discard;
+
+        renderAll();
+
+        message(
+          cpu.name + " が " + tileName(discard) + " を捨てました。"
+        );
+
+        await delay(500);
+      }
+
+      // プレイヤーの番
+      GameState.currentPlayer = 0;
+
+      GameState.busy = false;
+
+      message("あなたの番です。ツモしてください。");
+
+      playerDraw();
+
+    } catch (error) {
+      console.error(error);
+
+      GameState.busy = false;
+
+      message("CPU処理エラー：" + error.message);
+    }
+  }
+
+  /* =========================
+     CPU打牌判断
+  ========================= */
+
+  function chooseCpuDiscard(cpu) {
+    if (
+      typeof CPU !== "undefined" &&
+      typeof CPU.chooseDiscard === "function"
+    ) {
+      const index = CPU.chooseDiscard(
+        cpu.hand,
+        cpu.level
+      );
+
+      if (
+        Number.isInteger(index) &&
+        index >= 0 &&
+        index < cpu.hand.length
+      ) {
+        return index;
       }
     }
 
-    remaining = wall.length;
-
-    Mahjong.sortHand(players[0].hand);
-
-    render();
-
-    message("対局開始！あなたの番です。ツモを押してください。");
+    // CPU.jsが使えない場合
+    return Math.floor(Math.random() * cpu.hand.length);
   }
 
-  // ツモ
-  function draw() {
+  /* =========================
+     プレイヤーの手牌表示
+  ========================= */
 
-    if (!started || busy) return;
+  function renderPlayerHand() {
+    if (!playerHandElement) return;
 
-    if (currentPlayer !== 0) return;
+    playerHandElement.innerHTML = "";
 
-    if (playerHasDrawn) {
-      message("すでにツモっています。牌を選んで打牌してください。");
-      return;
+    const player = GameState.players[0];
+
+    if (!player) return;
+
+    player.hand.forEach((tile, index) => {
+      const button = document.createElement("button");
+
+      button.className = "tile";
+
+      button.textContent = tileName(tile);
+
+      button.dataset.index = String(index);
+
+      button.disabled =
+        GameState.busy ||
+        GameState.currentPlayer !== 0 ||
+        player.hand.length !== 14;
+
+      button.addEventListener("click", () => {
+        playerDiscard(index);
+      });
+
+      playerHandElement.appendChild(button);
+    });
+  }
+
+  /* =========================
+     CPU手牌表示
+  ========================= */
+
+  function renderCpuHands() {
+    const elements = [
+      handNorthElement,
+      handWestElement,
+      handEastElement
+    ];
+
+    for (let i = 0; i < 3; i++) {
+      const element = elements[i];
+
+      if (!element) continue;
+
+      element.innerHTML = "";
+
+      const cpu = GameState.players[i + 1];
+
+      if (!cpu) continue;
+
+      cpu.hand.forEach(() => {
+        const tile = document.createElement("span");
+
+        tile.className = "tile hidden-tile";
+
+        tile.textContent = "■";
+
+        element.appendChild(tile);
+      });
+    }
+  }
+
+  /* =========================
+     河の表示
+  ========================= */
+
+  function renderRiver() {
+    if (!riverElement) return;
+
+    riverElement.innerHTML = "";
+
+    GameState.rivers.forEach((river, seat) => {
+      const section = document.createElement("div");
+
+      section.className = "river-section";
+
+      const title = document.createElement("div");
+
+      title.className = "river-title";
+
+      title.textContent =
+        seat === 0 ? "あなたの河" :
+        seat === 1 ? "CPU北の河" :
+        seat === 2 ? "CPU西の河" :
+        "CPU東の河";
+
+      section.appendChild(title);
+
+      const tiles = document.createElement("div");
+
+      tiles.className = "river-tiles";
+
+      river.forEach((tile) => {
+        const span = document.createElement("span");
+
+        span.className = "river-tile";
+
+        span.textContent = tileName(tile);
+
+        tiles.appendChild(span);
+      });
+
+      section.appendChild(tiles);
+
+      riverElement.appendChild(section);
+    });
+  }
+
+  /* =========================
+     スコア表示
+  ========================= */
+
+  function renderScores() {
+    const scoreElements = [
+      $("playerScore"),
+      $("scoreNorth"),
+      $("scoreWest"),
+      $("scoreEast")
+    ];
+
+    GameState.players.forEach((player, index) => {
+      if (scoreElements[index]) {
+        scoreElements[index].textContent =
+          player.score.toLocaleString();
+      }
+    });
+  }
+
+  /* =========================
+     残り牌・局表示
+  ========================= */
+
+  function renderStatus() {
+    if (remainingElement) {
+      remainingElement.textContent =
+        String(GameState.remaining);
     }
 
-    if (!wall.length) {
-      endGame();
-      return;
+    if (roundElement) {
+      roundElement.textContent =
+        String(GameState.round);
     }
 
-    const tile = wall.pop();
+    if (turnInfoElement) {
+      const player = GameState.players[
+        GameState.currentPlayer
+      ];
 
-    players[0].hand.push(tile);
+      turnInfoElement.textContent =
+        player ? player.name + "の番" : "";
+    }
+  }
 
-    remaining = wall.length;
+  /* =========================
+     全画面更新
+  ========================= */
 
-    playerHasDrawn = true;
+  function renderAll() {
+    renderPlayerHand();
+    renderCpuHands();
+    renderRiver();
+    renderScores();
+    renderStatus();
+  }
 
-    Mahjong.sortHand(players[0].hand);
+  /* =========================
+     牌の名称
+  ========================= */
 
-    render();
+  function tileName(tile) {
+    if (tile === null || tile === undefined) {
+      return "";
+    }
 
-    if (Mahjong.isWinning(players[0].hand)) {
+    if (
+      typeof Mahjong !== "undefined" &&
+      typeof Mahjong.tileName === "function"
+    ) {
+      return Mahjong.tileName(tile);
+    }
 
-      message("ツモ和了できます！ツモ和了ボタンを押してください。");
+    return String(tile);
+  }
 
+  /* =========================
+     手牌整理
+  ========================= */
+
+  function sortHand() {
+    const player = GameState.players[0];
+
+    if (!player) return;
+
+    if (
+      typeof Mahjong !== "undefined" &&
+      typeof Mahjong.sortHand === "function"
+    ) {
+      player.hand = Mahjong.sortHand(player.hand);
     } else {
-
-      message("ツモしました。捨てる牌を選んでください。");
+      player.hand.sort((a, b) =>
+        String(a).localeCompare(String(b))
+      );
     }
+
+    renderAll();
+
+    message("手牌を整理しました。");
   }
 
-  // 打牌
-  function discard(index) {
+  /* =========================
+     リーチ
+  ========================= */
 
-    if (!started || busy) return;
-
-    if (currentPlayer !== 0) return;
-
-    if (!playerHasDrawn) {
-
-      message("先にツモをしてください。");
-      return;
-    }
-
-    const player = players[0];
-
-    const tile = player.hand.splice(index, 1)[0];
-
-    player.river.push(tile);
-
-    playerHasDrawn = false;
-
-    playerReach = false;
-
-    Mahjong.sortHand(player.hand);
-
-    render();
-
-    message("あなた：" + Mahjong.tileName(tile) + "を捨てました。");
-
-    currentPlayer = 1;
-
-    setTimeout(cpuTurn, 500);
-  }
-
-  // CPU対戦
-  function cpuTurn() {
-
-    if (!started || busy) return;
-
-    if (!wall.length) {
-
-      endGame();
-      return;
-    }
-
-    const player = players[currentPlayer];
-
-    // CPUツモ
-    player.hand.push(wall.pop());
-
-    remaining = wall.length;
-
-    // ツモ和了
-    if (CPU.shouldTsumo(player.hand, player.level)) {
-
-      player.score += 1000;
-
-      message(player.name + "がツモ和了しました！");
-
-      render();
-
-      setTimeout(nextTurn, 1200);
-
-      return;
-    }
-
-    // CPU打牌
-    const index = CPU.chooseDiscard(
-      player.hand,
-      player.level
-    );
-
-    const tile = player.hand.splice(index, 1)[0];
-
-    player.river.push(tile);
-
-    render();
-
-    message(
-      player.name +
-      "（Lv." + player.level + "）が" +
-      Mahjong.tileName(tile) +
-      "を捨てました。"
-    );
-
-    // 次のCPUまたはプレイヤー
-    setTimeout(nextTurn, 500);
-  }
-
-  // 次のプレイヤー
-  function nextTurn() {
-
-    if (!started) return;
-
-    currentPlayer++;
-
-    if (currentPlayer >= 4) {
-      currentPlayer = 0;
-    }
-
-    if (currentPlayer === 0) {
-
-      playerHasDrawn = false;
-
-      render();
-
-      message("あなたの番です。ツモを押してください。");
-
-    } else {
-
-      cpuTurn();
-    }
-  }
-
-  // リーチ
   function reach() {
+    const player = GameState.players[0];
 
-    if (!started || busy) return;
+    if (!player) return;
 
-    const player = players[0];
-
-    if (!playerHasDrawn) {
-
-      message("ツモ後にリーチを宣言してください。");
+    if (player.hand.length !== 14) {
+      message("リーチするにはツモ後の14枚が必要です。");
       return;
     }
 
-    if (player.hand.length !== 14) return;
+    if (player.reached) {
+      message("すでにリーチしています。");
+      return;
+    }
 
-    player.reach = true;
+    player.reached = true;
 
-    playerReach = true;
+    GameState.reached = true;
 
-    message("リーチを宣言しました！");
+    message("リーチ！");
   }
 
-  // ロン
-  function ron() {
+  /* =========================
+     ツモ判定
+  ========================= */
 
-    message("ロン判定は次の正式ルール実装で追加します。");
+  function checkTsumoButton() {
+    const player = GameState.players[0];
+
+    if (!player || !tsumoBtn) return;
+
+    tsumoBtn.disabled = !isWinningHand(player.hand);
   }
 
-  // ツモ和了
+  function isWinningHand(hand) {
+    if (
+      typeof Mahjong !== "undefined" &&
+      typeof Mahjong.isWinningHand === "function"
+    ) {
+      return Mahjong.isWinningHand(hand);
+    }
+
+    if (
+      typeof Mahjong !== "undefined" &&
+      typeof Mahjong.isWinning === "function"
+    ) {
+      return Mahjong.isWinning(hand);
+    }
+
+    return false;
+  }
+
+  /* =========================
+     ツモ
+  ========================= */
+
   function tsumo() {
+    const player = GameState.players[0];
 
-    if (!started || busy) return;
+    if (!player) return;
 
-    const player = players[0];
-
-    if (!playerHasDrawn) {
-
-      message("先にツモをしてください。");
+    if (!isWinningHand(player.hand)) {
+      message("まだツモ和了できません。");
       return;
     }
 
-    if (!Mahjong.isWinning(player.hand)) {
+    message("ツモ！ あなたの勝利です！");
 
-      message("まだ和了できません。");
+    player.score += 1000;
+
+    renderAll();
+
+    endGame("あなたのツモ和了！");
+  }
+
+  /* =========================
+     ロン
+  ========================= */
+
+  function ron() {
+    const player = GameState.players[0];
+
+    if (!player) return;
+
+    if (!GameState.lastDiscard) {
+      message("ロンできる牌がありません。");
+      return;
+    }
+
+    const testHand = player.hand.concat(
+      GameState.lastDiscard
+    );
+
+    if (!isWinningHand(testHand)) {
+      message("ロンできません。");
       return;
     }
 
     player.score += 1000;
 
-    message("ツモ和了！");
+    renderAll();
 
-    render();
-
-    setTimeout(endGame, 1500);
+    endGame("あなたのロン和了！");
   }
 
-  // 手牌整理
-  function sortHand() {
+  /* =========================
+     ゲーム終了
+  ========================= */
 
-    Mahjong.sortHand(players[0].hand);
+  function endGame(reason = "流局") {
+    GameState.started = false;
+    GameState.busy = false;
 
-    render();
+    drawBtn && (drawBtn.disabled = true);
+    reachBtn && (reachBtn.disabled = true);
+    ronBtn && (ronBtn.disabled = true);
+    tsumoBtn && (tsumoBtn.disabled = true);
+
+    message("ゲーム終了：" + reason);
   }
 
-  // 局終了
-  function endGame() {
+  /* =========================
+     リセット
+  ========================= */
 
-    started = false;
+  function resetGame() {
+    GameState.started = false;
+    GameState.busy = false;
 
-    const ranking = [...players].sort(
-      (a, b) => b.score - a.score
-    );
+    GameState.players = [];
+    GameState.wall = [];
 
-    let text = "対局終了！順位：";
+    GameState.rivers = [[], [], [], []];
 
-    ranking.forEach((p, i) => {
+    GameState.currentPlayer = 0;
+    GameState.remaining = 0;
 
-      text +=
-        (i + 1) + "位 " +
-        p.name + " " +
-        p.score + "点 / ";
-    });
+    GameState.lastDraw = null;
+    GameState.lastDiscard = null;
 
-    message(text);
+    GameState.reached = false;
 
-    render();
+    if (playerHandElement) {
+      playerHandElement.innerHTML = "";
+    }
+
+    if (handNorthElement) {
+      handNorthElement.innerHTML = "";
+    }
+
+    if (handWestElement) {
+      handWestElement.innerHTML = "";
+    }
+
+    if (handEastElement) {
+      handEastElement.innerHTML = "";
+    }
+
+    if (riverElement) {
+      riverElement.innerHTML = "";
+    }
+
+    renderStatus();
+
+    message("リセットしました。CPUレベルを選択して開始してください。");
   }
 
-  // 画面更新
-  function render() {
+  /* =========================
+     待機
+  ========================= */
 
-    if (!players.length) return;
-
-    $("remaining").textContent = remaining;
-
-    $("playerScore").textContent =
-      players[0].score + "点";
-
-    $("scoreEast").textContent =
-      players[1].score + "点";
-
-    $("scoreWest").textContent =
-      players[2].score + "点";
-
-    $("scoreNorth").textContent =
-      players[3].score + "点";
-
-    $("round").textContent = "東" + round + "局";
-
-    // 手牌
-    const area = $("playerHand");
-
-    area.innerHTML = "";
-
-    players[0].hand.forEach((tile, index) => {
-
-      const button = document.createElement("button");
-
-      button.className = "tile";
-
-      button.textContent = Mahjong.tileName(tile);
-
-      button.onclick = () => discard(index);
-
-      area.appendChild(button);
-    });
-
-    // CPU手牌は伏せる
-    $("handEast").textContent =
-      "🀫".repeat(players[1].hand.length);
-
-    $("handWest").textContent =
-      "🀫".repeat(players[2].hand.length);
-
-    $("handNorth").textContent =
-      "🀫".repeat(players[3].hand.length);
-
-    // 河
-    const rivers = [];
-
-    players.forEach(p => {
-
-      rivers.push(
-        p.name + "：" +
-        p.river.map(Mahjong.tileName).join(" ")
-      );
-    });
-
-    $("river").textContent = rivers.join(" ｜ ");
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  return {
+  /* =========================
+     ボタン設定
+  ========================= */
+
+  function setupEvents() {
+    startBtn?.addEventListener("click", startGame);
+
+    resetBtn?.addEventListener("click", resetGame);
+
+    drawBtn?.addEventListener("click", playerDraw);
+
+    reachBtn?.addEventListener("click", reach);
+
+    ronBtn?.addEventListener("click", ron);
+
+    tsumoBtn?.addEventListener("click", tsumo);
+
+    sortBtn?.addEventListener("click", sortHand);
+  }
+
+  /* =========================
+     初期化
+  ========================= */
+
+  function initialize() {
+    setupCpuLevels();
+    setupEvents();
+
+    resetGame();
+
+    console.log("MAHJONG21 app.js 読み込み完了");
+  }
+
+  /* =========================
+     公開API
+  ========================= */
+
+  window.Game = {
     startGame,
-    draw,
-    discard,
+    resetGame,
+    draw: playerDraw,
+    discard: playerDiscard,
     reach,
     ron,
     tsumo,
-    sortHand
+    sortHand,
+
+    getState() {
+      return GameState;
+    },
+
+    getCpuLevel
   };
 
+  /* =========================
+     起動
+  ========================= */
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize);
+  } else {
+    initialize();
+  }
+
 })();
-
-// CPUレベル選択
-for (let i = 1; i <= 21; i++) {
-
-  const option = document.createElement("option");
-
-  option.value = i;
-
-  option.textContent = "Lv." + i;
-
-  $("cpuLevel").appendChild(option);
-}
-
-// ボタン
-$("startBtn").onclick = Game.startGame;
-
-$("resetBtn").onclick = Game.startGame;
-
-$("drawBtn").onclick = Game.draw;
-
-$("reachBtn").onclick = Game.reach;
-
-$("ronBtn").onclick = Game.ron;
-
-$("tsumoBtn").onclick = Game.tsumo;
-
-$("sortBtn").onclick = Game.sortHand;
-
-// 初期画面
-$("cpuLevel").value = 5;
