@@ -1,0 +1,188 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #071426;
+  color: white;
+  font-family: "Yu Gothic", sans-serif;
+}
+
+header {
+  text-align: center;
+  background: #10243a;
+  padding: 20px;
+  border-bottom: 3px solid gold;
+}
+
+h1 {
+  color: gold;
+  font-size: 42px;
+  margin: 0;
+}
+
+.settings {
+  text-align: center;
+  padding: 15px;
+}
+
+select {
+  padding: 10px;
+  border-radius: 8px;
+}
+
+button {
+  background: #1459b5;
+  color: white;
+  border: 1px solid #6da7ff;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2878df;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mahjongTable {
+  background: #087345;
+  border: 12px solid #49301c;
+  border-radius: 25px;
+  max-width: 1100px;
+  margin: auto;
+  padding: 20px;
+  min-height: 600px;
+  position: relative;
+}
+
+.cpu {
+  background: #10243a;
+  border: 1px solid #8bb79e;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  width: 130px;
+}
+
+.cpu h3 {
+  margin: 5px;
+}
+
+.cpu-north {
+  margin: auto;
+}
+
+.cpu-west {
+  position: absolute;
+  left: 10px;
+  top: 40%;
+}
+
+.cpu-east {
+  position: absolute;
+  right: 10px;
+  top: 40%;
+}
+
+.centerInfo {
+  text-align: center;
+  padding: 30px;
+}
+
+.centerInfo h2 {
+  color: gold;
+}
+
+.player {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.hand {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.tile {
+  background: #fff;
+  color: #111;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  min-width: 35px;
+  padding: 10px 5px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.tile:hover {
+  transform: translateY(-5px);
+}
+
+.tile.red {
+  color: #c22;
+}
+
+.tile.green {
+  color: #176b42;
+}
+
+#river {
+  min-height: 100px;
+  max-width: 500px;
+  margin: auto;
+  overflow-wrap: anywhere;
+  font-size: 22px;
+}
+
+.controls {
+  text-align: center;
+  padding: 15px;
+}
+
+#message {
+  max-width: 1100px;
+  margin: 15px auto;
+  padding: 15px;
+  background: #10243a;
+  border-radius: 10px;
+  text-align: center;
+}
+
+@media(max-width:700px) {
+  .mahjongTable {
+    padding: 10px;
+    min-height: 500px;
+  }
+
+  .cpu {
+    width: 90px;
+    font-size: 12px;
+  }
+
+  .cpu-west {
+    left: 0;
+  }
+
+  .cpu-east {
+    right: 0;
+  }
+
+  .tile {
+    min-width: 25px;
+    font-size: 18px;
+    padding: 8px 3px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+}
