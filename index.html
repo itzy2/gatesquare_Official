@@ -1,405 +1,539 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4511e">
 
-  <title>MAHJONG21 | 麻雀CPU対戦</title>
+<title>SUSHI DAY | 予約システム</title>
 
-  <meta name="theme-color" content="#10243a">
-  <meta name="description" content="CPUレベル1～21に対応した麻雀ゲーム">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <link rel="stylesheet" href="./style.css?v=10">
+<style>
+* { box-sizing:border-box; }
 
-  <style>
-    body {
-      margin: 0;
-      background: #071426;
-      color: white;
-      font-family: Arial, "Noto Sans JP", sans-serif;
-    }
+body {
+  margin:0;
+  background:#fff7f0;
+  color:#222;
+  font-family:Arial,"Noto Sans JP",sans-serif;
+}
 
-    header {
-      background: #10243a;
-      padding: 18px;
-      text-align: center;
-      border-bottom: 2px solid #294765;
-    }
+header {
+  background:#f4511e;
+  color:white;
+  padding:25px;
+  text-align:center;
+}
 
-    header h1 {
-      margin: 0;
-      font-size: 28px;
-    }
+header h1 { margin:0; font-size:32px; }
 
-    header p {
-      margin: 8px 0 0;
-      color: #b9cde2;
-    }
+.container {
+  max-width:850px;
+  margin:auto;
+  padding:20px;
+}
 
-    main {
-      max-width: 1100px;
-      margin: auto;
-      padding: 15px;
-    }
+.card {
+  background:white;
+  border-radius:16px;
+  padding:22px;
+  margin-bottom:20px;
+  box-shadow:0 4px 15px #0001;
+}
 
-    .panel {
-      background: #10243a;
-      border: 1px solid #294765;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
+input,button {
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border-radius:10px;
+  font-size:15px;
+}
 
-    .cpu-select-area {
-      text-align: center;
-    }
+input { border:1px solid #ddd; }
 
-    #cpuLevel {
-      width: 100%;
-      max-width: 350px;
-      padding: 12px;
-      font-size: 17px;
-      border-radius: 8px;
-      background: white;
-      color: black;
-    }
+button {
+  background:#f4511e;
+  color:white;
+  border:0;
+  font-weight:bold;
+  cursor:pointer;
+}
 
-    button {
-      cursor: pointer;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 18px;
-      margin: 4px;
-      font-size: 15px;
-      font-weight: bold;
-    }
+button:disabled {
+  background:#aaa;
+  cursor:not-allowed;
+}
 
-    .main-button {
-      background: #2196f3;
-      color: white;
-    }
+.secondary { background:#555; }
+.cancel { background:#777; }
 
-    .sub-button {
-      background: #294765;
-      color: white;
-    }
+.day {
+  padding:16px;
+  border:1px solid #eee;
+  border-radius:12px;
+  margin-bottom:12px;
+}
 
-    .game-status {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-around;
-      gap: 10px;
-      text-align: center;
-    }
+.available { color:#16803c; }
+.reserved { color:#e53935; }
 
-    .status-box {
-      background: #071426;
-      padding: 12px;
-      border-radius: 8px;
-      min-width: 100px;
-    }
+.hidden { display:none; }
 
-    .cpu-area {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
+.status {
+  background:#fff1e8;
+  padding:12px;
+  border-radius:10px;
+  margin-top:12px;
+}
 
-    .cpu-box {
-      background: #071426;
-      border: 1px solid #294765;
-      border-radius: 10px;
-      padding: 10px;
-      text-align: center;
-      min-width: 0;
-    }
-
-    .cpu-box h3 {
-      margin-top: 0;
-      font-size: 16px;
-    }
-
-    .tiles {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 3px;
-      min-height: 35px;
-    }
-
-    .tile {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-      color: #111;
-      border: 1px solid #bbb;
-      border-radius: 4px;
-      width: 32px;
-      height: 43px;
-      font-size: 13px;
-      font-weight: bold;
-      padding: 0;
-      margin: 1px;
-    }
-
-    .hidden-tile {
-      background: #c5d7e8;
-      color: #294765;
-    }
-
-    .river-section {
-      margin: 10px 0;
-      padding: 10px;
-      background: #071426;
-      border-radius: 8px;
-    }
-
-    .river-title {
-      margin-bottom: 8px;
-      color: #b9cde2;
-      font-size: 14px;
-    }
-
-    .river-tiles {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 3px;
-    }
-
-    .river-tile {
-      background: white;
-      color: black;
-      padding: 5px;
-      border-radius: 3px;
-      font-size: 12px;
-    }
-
-    #message {
-      background: #071426;
-      padding: 15px;
-      border-radius: 8px;
-      text-align: center;
-      font-weight: bold;
-      color: #ffd54f;
-      min-height: 24px;
-    }
-
-    .control-area {
-      text-align: center;
-    }
-
-    .hand-area {
-      text-align: center;
-    }
-
-    footer {
-      text-align: center;
-      color: #8ca6c0;
-      padding: 20px;
-    }
-
-    @media (max-width: 600px) {
-      .cpu-area {
-        grid-template-columns: 1fr;
-      }
-
-      header h1 {
-        font-size: 23px;
-      }
-
-      .tile {
-        width: 27px;
-        height: 38px;
-        font-size: 11px;
-      }
-    }
-  </style>
+footer {
+  text-align:center;
+  padding:25px;
+  color:#888;
+}
+</style>
 </head>
 
 <body>
 
 <header>
-  <h1>MAHJONG21</h1>
-  <p>麻雀 CPU 対戦ゲーム</p>
+  <h1>🍣 SUSHI DAY</h1>
+  <p>1日1人限定！早い者勝ち予約システム</p>
 </header>
 
-<main>
+<div class="container">
 
-  <!-- CPUレベル選択 -->
-  <section class="panel cpu-select-area">
+<section class="card" id="loginArea">
+  <h2>ログイン・新規登録</h2>
 
-    <h2>CPU難易度選択</h2>
+  <input id="name" placeholder="名前（新規登録時）">
+  <input id="email" type="email" placeholder="メールアドレス">
+  <input id="password" type="password" placeholder="パスワード">
 
-    <label for="cpuLevel">対戦するCPUのレベル：</label>
+  <button onclick="signup()">新規登録</button>
+  <button class="secondary" onclick="login()">ログイン</button>
 
-    <br><br>
+  <div class="status" id="message">友達10人限定の予約サイト</div>
+</section>
 
-    <select id="cpuLevel">
-      <option value="1">CPU Lv.1（入門）</option>
-      <option value="2">CPU Lv.2</option>
-      <option value="3">CPU Lv.3</option>
-      <option value="4">CPU Lv.4</option>
-      <option value="5">CPU Lv.5（初級）</option>
-      <option value="6">CPU Lv.6</option>
-      <option value="7">CPU Lv.7</option>
-      <option value="8">CPU Lv.8</option>
-      <option value="9">CPU Lv.9</option>
-      <option value="10">CPU Lv.10（中級）</option>
-      <option value="11">CPU Lv.11</option>
-      <option value="12">CPU Lv.12</option>
-      <option value="13">CPU Lv.13</option>
-      <option value="14">CPU Lv.14</option>
-      <option value="15">CPU Lv.15（上級）</option>
-      <option value="16">CPU Lv.16</option>
-      <option value="17">CPU Lv.17</option>
-      <option value="18">CPU Lv.18</option>
-      <option value="19">CPU Lv.19</option>
-      <option value="20">CPU Lv.20（強豪）</option>
-      <option value="21">CPU Lv.21（最強）</option>
-    </select>
+<section class="card hidden" id="userArea">
+  <h2>こんにちは、<span id="userName"></span> さん！</h2>
+  <button class="secondary" onclick="logout()">ログアウト</button>
+</section>
 
-    <br><br>
+<section class="card hidden" id="reservationArea">
+  <h2>📅 予約カレンダー</h2>
+  <p>今日から2ヶ月後まで予約できます。</p>
+  <div id="calendar">読み込み中...</div>
+</section>
 
-    <button id="startBtn" class="main-button">
-      ゲーム開始
-    </button>
+<section class="card hidden" id="myArea">
+  <h2>🎫 自分の予約</h2>
+  <div id="myReservation"></div>
+</section>
 
-    <button id="resetBtn" class="sub-button">
-      リセット
-    </button>
+<section class="card hidden" id="historyArea">
+  <h2>📋 みんなの予約状況</h2>
+  <div id="history"></div>
+</section>
 
-  </section>
+</div>
 
-  <!-- ゲーム情報 -->
-  <section class="panel">
+<footer>SUSHI DAY © 2026</footer>
 
-    <h2>ゲーム情報</h2>
+<script>
 
-    <div class="game-status">
+// ========================================
+// Supabase接続設定
+// ========================================
 
-      <div class="status-box">
-        残り牌
-        <div id="remaining">0</div>
-      </div>
+// SupabaseのProject URLを入力
+const SUPABASE_URL = "ここにSupabaseのProject URL";
 
-      <div class="status-box">
-        局
-        <div id="round">1</div>
-      </div>
+// SupabaseのPublishable keyを入力
+const SUPABASE_KEY = "ここにSupabaseのPublishable key";
 
-      <div class="status-box">
-        手番
-        <div id="turnInfo">開始前</div>
-      </div>
+// 接続
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-    </div>
+let currentUser = null;
 
-  </section>
+// ========================================
+// 日付処理
+// ========================================
 
-  <!-- CPU -->
-  <section class="panel">
+function formatDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,"0");
+  const d = String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
 
-    <h2>CPUプレイヤー</h2>
+function dateText(date) {
+  return new Date(date+"T00:00:00").toLocaleDateString(
+    "ja-JP",
+    {
+      year:"numeric",
+      month:"long",
+      day:"numeric",
+      weekday:"short"
+    }
+  );
+}
 
-    <div class="cpu-area">
+function today() {
+  return formatDate(new Date());
+}
 
-      <div class="cpu-box">
-        <h3>CPU北</h3>
-        <div id="handNorth" class="tiles"></div>
-        <p>点数：<span id="scoreNorth">25000</span></p>
-      </div>
+function endDate() {
+  const d = new Date();
+  d.setMonth(d.getMonth()+2);
+  return formatDate(d);
+}
 
-      <div class="cpu-box">
-        <h3>CPU西</h3>
-        <div id="handWest" class="tiles"></div>
-        <p>点数：<span id="scoreWest">25000</span></p>
-      </div>
+// ========================================
+// 画面表示
+// ========================================
 
-      <div class="cpu-box">
-        <h3>CPU東</h3>
-        <div id="handEast" class="tiles"></div>
-        <p>点数：<span id="scoreEast">25000</span></p>
-      </div>
+function show(id,visible) {
+  document.getElementById(id)
+    .classList.toggle("hidden",!visible);
+}
 
-    </div>
+function message(text) {
+  document.getElementById("message").textContent=text;
+}
 
-  </section>
+// ========================================
+// 新規登録
+// ========================================
 
-  <!-- 河 -->
-  <section class="panel">
+async function signup() {
 
-    <h2>捨て牌</h2>
+  const name=document.getElementById("name").value.trim();
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
 
-    <div id="river"></div>
+  if(!name || !email || !password) {
+    message("すべて入力してください");
+    return;
+  }
 
-  </section>
+  const {error}=await supabaseClient.auth.signUp({
+    email,
+    password,
+    options:{
+      data:{display_name:name}
+    }
+  });
 
-  <!-- 自分の手牌 -->
-  <section class="panel hand-area">
+  if(error) {
+    message(error.message);
+    return;
+  }
 
-    <h2>あなたの手牌</h2>
+  message("登録しました。メール確認が必要な場合があります。");
+}
 
-    <div id="playerHand" class="tiles"></div>
+// ========================================
+// ログイン
+// ========================================
 
-    <p>
-      点数：
-      <strong id="playerScore">25000</strong>
-    </p>
+async function login() {
 
-  </section>
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
 
-  <!-- 操作 -->
-  <section class="panel control-area">
+  const {error}=await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
 
-    <h2>操作</h2>
+  if(error) {
+    message(error.message);
+    return;
+  }
 
-    <button id="drawBtn" class="main-button">
-      ツモ
-    </button>
+  await initialize();
+}
 
-    <button id="reachBtn" class="sub-button">
-      リーチ
-    </button>
+// ========================================
+// ログアウト
+// ========================================
 
-    <button id="ronBtn" class="sub-button">
-      ロン
-    </button>
+async function logout() {
+  await supabaseClient.auth.signOut();
+  await initialize();
+}
 
-    <button id="tsumoBtn" class="sub-button">
-      ツモ和了
-    </button>
+// ========================================
+// 初期化
+// ========================================
 
-    <button id="sortBtn" class="sub-button">
-      手牌整理
-    </button>
+async function initialize() {
 
-  </section>
+  const {data,error}=await supabaseClient.auth.getUser();
 
-  <!-- メッセージ -->
-  <section class="panel">
+  if(error) {
+    console.error(error);
+  }
 
-    <h2>ゲームメッセージ</h2>
+  currentUser=data?.user || null;
 
-    <div id="message">
-      CPUレベルを選択してゲーム開始してください。
-    </div>
+  show("loginArea",!currentUser);
+  show("userArea",!!currentUser);
+  show("reservationArea",!!currentUser);
+  show("myArea",!!currentUser);
+  show("historyArea",!!currentUser);
 
-  </section>
+  if(!currentUser) return;
 
-</main>
+  const {data:profile,error:profileError}=await supabaseClient
+    .from("profiles")
+    .select("display_name")
+    .eq("id",currentUser.id)
+    .maybeSingle();
 
-<footer>
-  MAHJONG21
-  <br>
-  CPU Level 1 - 21
-</footer>
+  if(profileError) {
+    alert("プロフィール取得エラー："+profileError.message);
+    return;
+  }
 
-<!-- JavaScript -->
+  document.getElementById("userName").textContent=
+    profile?.display_name || "ユーザー";
 
-<script src="./mahjong.js?v=10"></script>
-<script src="./cpu.js?v=10"></script>
-<script src="./app.js?v=10"></script>
+  await loadCalendar();
+  await loadMyReservation();
+  await loadHistory();
+}
+
+// ========================================
+// 予約カレンダー
+// ========================================
+
+async function loadCalendar() {
+
+  const {data,error}=await supabaseClient
+    .from("daily_reservations")
+    .select("*")
+    .gte("reservation_date",today())
+    .lte("reservation_date",endDate())
+    .order("reservation_date");
+
+  const area=document.getElementById("calendar");
+
+  if(error) {
+    area.textContent="予約情報を取得できません："+error.message;
+    return;
+  }
+
+  const reservations={};
+
+  (data||[]).forEach(r=>{
+    reservations[r.reservation_date]=r;
+  });
+
+  area.innerHTML="";
+
+  const start=new Date();
+  const end=new Date();
+  end.setMonth(end.getMonth()+2);
+
+  for(
+    let d=new Date(start);
+    d<=end;
+    d.setDate(d.getDate()+1)
+  ) {
+
+    const date=formatDate(d);
+    const reservation=reservations[date];
+
+    const div=document.createElement("div");
+    div.className="day";
+
+    const title=document.createElement("h3");
+    title.textContent=dateText(date);
+
+    const status=document.createElement("p");
+
+    if(reservation) {
+
+      status.className="reserved";
+      status.textContent="🔴 予約済み";
+
+      const owner=document.createElement("p");
+      owner.textContent="予約者："+reservation.display_name;
+
+      div.append(title,status,owner);
+
+    } else {
+
+      status.className="available";
+      status.textContent="🟢 予約受付中";
+
+      const btn=document.createElement("button");
+      btn.textContent="この日を予約する";
+      btn.onclick=()=>reserve(date);
+
+      div.append(title,status,btn);
+    }
+
+    area.appendChild(div);
+  }
+}
+
+// ========================================
+// 予約実行
+// ========================================
+
+async function reserve(date) {
+
+  if(!confirm(dateText(date)+"を予約しますか？")) return;
+
+  const {data,error}=await supabaseClient.rpc(
+    "reserve_day",
+    {p_date:date}
+  );
+
+  if(error) {
+    alert("予約エラー："+error.message);
+    return;
+  }
+
+  const result=data?.[0];
+
+  if(result?.success) {
+    alert("🎉 予約成功！\n"+dateText(date));
+  } else {
+    alert("予約できませんでした。\n"+(result?.message||"予約済みです"));
+  }
+
+  await refresh();
+}
+
+// ========================================
+// 自分の予約
+// ========================================
+
+async function loadMyReservation() {
+
+  const {data,error}=await supabaseClient
+    .from("daily_reservations")
+    .select("*")
+    .eq("user_id",currentUser.id)
+    .gte("reservation_date",today())
+    .order("reservation_date");
+
+  const area=document.getElementById("myReservation");
+  area.innerHTML="";
+
+  if(error || !data || data.length===0) {
+    area.textContent="現在予約はありません。";
+    return;
+  }
+
+  data.forEach(r=>{
+
+    const div=document.createElement("div");
+    div.className="day";
+
+    const title=document.createElement("h3");
+    title.textContent=dateText(r.reservation_date);
+
+    const btn=document.createElement("button");
+    btn.className="cancel";
+    btn.textContent="予約をキャンセル";
+
+    btn.onclick=async()=>{
+
+      if(!confirm("予約をキャンセルしますか？")) return;
+
+      const {data:result,error}=await supabaseClient.rpc(
+        "cancel_day",
+        {p_date:r.reservation_date}
+      );
+
+      if(error) {
+        alert(error.message);
+        return;
+      }
+
+      alert(result ? "キャンセルしました" : "キャンセルできませんでした");
+
+      await refresh();
+    };
+
+    div.append(title,btn);
+    area.appendChild(div);
+  });
+}
+
+// ========================================
+// 全体の予約状況
+// ========================================
+
+async function loadHistory() {
+
+  const {data,error}=await supabaseClient
+    .from("daily_reservations")
+    .select("*")
+    .gte("reservation_date",today())
+    .order("reservation_date");
+
+  const area=document.getElementById("history");
+  area.innerHTML="";
+
+  if(error) {
+    area.textContent="取得エラー："+error.message;
+    return;
+  }
+
+  if(!data || data.length===0) {
+    area.textContent="まだ予約はありません。";
+    return;
+  }
+
+  data.forEach(r=>{
+
+    const div=document.createElement("div");
+    div.className="day";
+
+    const title=document.createElement("h3");
+    title.textContent=dateText(r.reservation_date);
+
+    const owner=document.createElement("p");
+    owner.textContent="予約者："+r.display_name;
+
+    div.append(title,owner);
+    area.appendChild(div);
+  });
+}
+
+// ========================================
+// 更新
+// ========================================
+
+async function refresh() {
+  await loadCalendar();
+  await loadMyReservation();
+  await loadHistory();
+}
+
+// ========================================
+// 起動
+// ========================================
+
+supabaseClient.auth.onAuthStateChange(()=>{
+  setTimeout(initialize,0);
+});
+
+initialize();
+
+</script>
 
 </body>
 </html>
