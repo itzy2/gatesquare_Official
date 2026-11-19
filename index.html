@@ -1,96 +1,248 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f4511e">
-
-<title>SUSHI DAY | 予約システム</title>
+<title>gatesquare公式 | 予約システム</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-* { box-sizing:border-box; }
+:root {
+  --orange: #f97316;
+  --orange-dark: #ea580c;
+  --bg: #fff7ed;
+  --text: #292524;
+  --muted: #78716c;
+  --border: #fed7aa;
+  --white: #ffffff;
+  --green: #15803d;
+  --red: #dc2626;
+}
+
+* {
+  box-sizing: border-box;
+}
 
 body {
-  margin:0;
-  background:#fff7f0;
-  color:#222;
-  font-family:Arial,"Noto Sans JP",sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans JP", sans-serif;
 }
 
 header {
-  background:#f4511e;
-  color:white;
-  padding:25px;
-  text-align:center;
+  background: var(--orange);
+  color: white;
+  text-align: center;
+  padding: 28px 15px;
 }
 
-header h1 { margin:0; font-size:32px; }
+header h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: 2px;
+}
 
-.container {
-  max-width:850px;
-  margin:auto;
-  padding:20px;
+header p {
+  margin: 8px 0 0;
+}
+
+main {
+  width: min(950px, 94%);
+  margin: 25px auto 60px;
 }
 
 .card {
-  background:white;
-  border-radius:16px;
-  padding:22px;
-  margin-bottom:20px;
-  box-shadow:0 4px 15px #0001;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 14px rgba(120, 53, 15, 0.06);
 }
 
-input,button {
-  width:100%;
-  padding:14px;
-  margin-top:10px;
-  border-radius:10px;
-  font-size:15px;
+h2 {
+  margin: 0 0 18px;
+  font-size: 20px;
 }
 
-input { border:1px solid #ddd; }
+.notice {
+  background: #ffedd5;
+  border-radius: 12px;
+  padding: 15px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.user-name {
+  color: var(--orange-dark);
+  font-weight: bold;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin: 14px 0 7px;
+}
+
+input, select {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 16px;
+  background: white;
+}
 
 button {
-  background:#f4511e;
-  color:white;
-  border:0;
-  font-weight:bold;
-  cursor:pointer;
+  border: none;
+  border-radius: 9px;
+  padding: 12px 18px;
+  background: var(--orange);
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--orange-dark);
 }
 
 button:disabled {
-  background:#aaa;
-  cursor:not-allowed;
+  opacity: .45;
+  cursor: not-allowed;
 }
 
-.secondary { background:#555; }
-.cancel { background:#777; }
-
-.day {
-  padding:16px;
-  border:1px solid #eee;
-  border-radius:12px;
-  margin-bottom:12px;
+.primary-button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 15px;
 }
 
-.available { color:#16803c; }
-.reserved { color:#e53935; }
+.cancel-button {
+  background: var(--red);
+  padding: 8px 12px;
+  font-size: 13px;
+}
 
-.hidden { display:none; }
+.slot-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.slot {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  background: #fffaf5;
+}
+
+.slot-time {
+  font-size: 17px;
+  font-weight: bold;
+}
+
+.slot-detail {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 6px 0 10px;
+}
+
+.slot.reserved {
+  background: #f5f5f4;
+  border-color: #d6d3d1;
+}
+
+.slot.reserved .slot-time {
+  color: var(--muted);
+}
 
 .status {
-  background:#fff1e8;
-  padding:12px;
-  border-radius:10px;
-  margin-top:12px;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--green);
+}
+
+.status.full {
+  color: var(--red);
+}
+
+.reservation-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #eee;
+  padding: 13px 0;
+}
+
+.reservation-row:last-child {
+  border-bottom: none;
+}
+
+.reservation-info {
+  line-height: 1.7;
+}
+
+.reservation-info strong {
+  color: var(--orange-dark);
+}
+
+.empty {
+  color: var(--muted);
+  padding: 12px 0;
+}
+
+.message {
+  padding: 13px;
+  border-radius: 9px;
+  margin-top: 15px;
+  display: none;
+  line-height: 1.6;
+}
+
+.message.error {
+  display: block;
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.message.success {
+  display: block;
+  color: #166534;
+  background: #dcfce7;
+}
+
+.small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 footer {
-  text-align:center;
-  padding:25px;
-  color:#888;
+  text-align: center;
+  color: var(--muted);
+  padding: 25px;
+  font-size: 13px;
+}
+
+@media (max-width: 550px) {
+  header h1 {
+    font-size: 25px;
+  }
+
+  .card {
+    padding: 17px;
+  }
+
+  .reservation-row {
+    align-items: flex-start;
+  }
 }
 </style>
 </head>
@@ -98,441 +250,513 @@ footer {
 <body>
 
 <header>
-  <h1>🍣 SUSHI DAY</h1>
-  <p>1日1人限定！早い者勝ち予約システム</p>
+  <h1>SUSHI DAY</h1>
+  <p>予約システム</p>
 </header>
 
-<div class="container">
+<main>
 
-<section class="card" id="loginArea">
-  <h2>ログイン・新規登録</h2>
+  <section class="card">
+    <h2>ログイン情報</h2>
+    <div id="userStatus">ログイン状態を確認しています...</div>
+  </section>
 
-  <input id="name" placeholder="名前（新規登録時）">
-  <input id="email" type="email" placeholder="メールアドレス">
-  <input id="password" type="password" placeholder="パスワード">
+  <section class="card">
+    <h2>予約について</h2>
+    <div class="notice">
+      <strong>予約時間：60分</strong><br>
+      入れ替え時間：10分<br>
+      予約間隔：70分<br>
+      受付時間：10:00～20:00<br>
+      予約可能期間：今日から2か月先まで
+    </div>
+    <p class="small">
+      同じ日・同じ時間枠には1人だけ予約できます。
+      予約が完了すると、予約一覧にユーザー名が表示されます。
+    </p>
+  </section>
 
-  <button onclick="signup()">新規登録</button>
-  <button class="secondary" onclick="login()">ログイン</button>
+  <section class="card">
+    <h2>予約する</h2>
 
-  <div class="status" id="message">友達10人限定の予約サイト</div>
-</section>
+    <label for="reservationDate">予約日</label>
+    <input type="date" id="reservationDate">
 
-<section class="card hidden" id="userArea">
-  <h2>こんにちは、<span id="userName"></span> さん！</h2>
-  <button class="secondary" onclick="logout()">ログアウト</button>
-</section>
+    <label for="reservationTime">予約時間</label>
+    <select id="reservationTime">
+      <option value="">予約時間を選択してください</option>
+    </select>
 
-<section class="card hidden" id="reservationArea">
-  <h2>📅 予約カレンダー</h2>
-  <p>今日から2ヶ月後まで予約できます。</p>
-  <div id="calendar">読み込み中...</div>
-</section>
+    <button class="primary-button" id="reserveButton">
+      この内容で予約する
+    </button>
 
-<section class="card hidden" id="myArea">
-  <h2>🎫 自分の予約</h2>
-  <div id="myReservation"></div>
-</section>
+    <div id="message" class="message"></div>
+  </section>
 
-<section class="card hidden" id="historyArea">
-  <h2>📋 みんなの予約状況</h2>
-  <div id="history"></div>
-</section>
+  <section class="card">
+    <h2>選択日の予約状況</h2>
+    <div id="slotList" class="slot-list">
+      日付を選択してください。
+    </div>
+  </section>
 
-</div>
+  <section class="card">
+    <h2>みんなの予約一覧</h2>
+    <div id="allReservations">
+      読み込み中...
+    </div>
+  </section>
 
-<footer>SUSHI DAY © 2026</footer>
+  <section class="card">
+    <h2>自分の予約</h2>
+    <div id="myReservations">
+      読み込み中...
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  SUSHI DAY Reservation System
+</footer>
 
 <script>
+const SUPABASE_URL =
+  "https://hxrtpftlklgwesvanlpk.supabase.co";
 
-// ========================================
-// Supabase接続設定
-// ========================================
+const SUPABASE_KEY =
+  "sb_publishable_b1tG9o1bXMzZBXGHBJZhZA_Ak-KYmnZ";
 
-// SupabaseのProject URLを入力
-const SUPABASE_URL = "https://hxrtpftlklgwesvanlpk.supabase.co";
-
-// SupabaseのPublishable keyを入力
-const SUPABASE_KEY = "sb_publishable_b1tG9o1bXMzZBXGHBJZhZA_Ak-KYmnZ";
-
-// 接続
-const supabaseClient = window.supabase.createClient(
+const db = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
 
+const SLOT_STARTS = [
+  "10:00",
+  "11:10",
+  "12:20",
+  "13:30",
+  "14:40",
+  "15:50",
+  "17:00",
+  "18:10"
+];
+
 let currentUser = null;
+let currentDisplayName = "";
 
-// ========================================
-// 日付処理
-// ========================================
+const dateInput = document.getElementById("reservationDate");
+const timeSelect = document.getElementById("reservationTime");
+const slotList = document.getElementById("slotList");
+const messageBox = document.getElementById("message");
 
-function formatDate(date) {
+function localDateString(date) {
   const y = date.getFullYear();
-  const m = String(date.getMonth()+1).padStart(2,"0");
-  const d = String(date.getDate()).padStart(2,"0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
-function dateText(date) {
-  return new Date(date+"T00:00:00").toLocaleDateString(
-    "ja-JP",
-    {
-      year:"numeric",
-      month:"long",
-      day:"numeric",
-      weekday:"short"
-    }
-  );
+function addMonths(date, months) {
+  const result = new Date(date);
+  const originalDay = result.getDate();
+
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+
+  const lastDay = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0
+  ).getDate();
+
+  result.setDate(Math.min(originalDay, lastDay));
+  return result;
 }
 
-function today() {
-  return formatDate(new Date());
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
 }
 
-function endDate() {
-  const d = new Date();
-  d.setMonth(d.getMonth()+2);
-  return formatDate(d);
+function endTime(start) {
+  const [hour, minute] = start.split(":").map(Number);
+  const total = hour * 60 + minute + 60;
+
+  const h = String(Math.floor(total / 60)).padStart(2, "0");
+  const m = String(total % 60).padStart(2, "0");
+
+  return `${h}:${m}`;
 }
 
-// ========================================
-// 画面表示
-// ========================================
-
-function show(id,visible) {
-  document.getElementById(id)
-    .classList.toggle("hidden",!visible);
+function showMessage(text, type) {
+  messageBox.textContent = text;
+  messageBox.className = "message " + type;
 }
 
-function message(text) {
-  document.getElementById("message").textContent=text;
+function clearMessage() {
+  messageBox.textContent = "";
+  messageBox.className = "message";
 }
 
-// ========================================
-// 新規登録
-// ========================================
+function initializeDateInput() {
+  const today = new Date();
+  const maxDate = addMonths(today, 2);
 
-async function signup() {
+  dateInput.min = localDateString(today);
+  dateInput.max = localDateString(maxDate);
+  dateInput.value = localDateString(today);
+}
 
-  const name=document.getElementById("name").value.trim();
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value;
+function initializeTimeSelect() {
+  timeSelect.innerHTML =
+    '<option value="">予約時間を選択してください</option>';
 
-  if(!name || !email || !password) {
-    message("すべて入力してください");
-    return;
-  }
-
-  const {error}=await supabaseClient.auth.signUp({
-    email,
-    password,
-    options:{
-      data:{display_name:name}
-    }
+  SLOT_STARTS.forEach(start => {
+    const option = document.createElement("option");
+    option.value = start;
+    option.textContent =
+      `${start} ～ ${endTime(start)}（60分）`;
+    timeSelect.appendChild(option);
   });
-
-  if(error) {
-    message(error.message);
-    return;
-  }
-
-  message("登録しました。メール確認が必要な場合があります。");
 }
 
-// ========================================
-// ログイン
-// ========================================
+async function loadUser() {
+  const { data, error } = await db.auth.getUser();
 
-async function login() {
+  if (error || !data.user) {
+    currentUser = null;
 
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value;
+    document.getElementById("userStatus").innerHTML =
+      '<span style="color:#dc2626">ログインしていません。先にログインしてください。</span>';
 
-  const {error}=await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if(error) {
-    message(error.message);
-    return;
+    document.getElementById("reserveButton").disabled = true;
+    return false;
   }
 
-  await initialize();
-}
+  currentUser = data.user;
 
-// ========================================
-// ログアウト
-// ========================================
-
-async function logout() {
-  await supabaseClient.auth.signOut();
-  await initialize();
-}
-
-// ========================================
-// 初期化
-// ========================================
-
-async function initialize() {
-
-  const {data,error}=await supabaseClient.auth.getUser();
-
-  if(error) {
-    console.error(error);
-  }
-
-  currentUser=data?.user || null;
-
-  show("loginArea",!currentUser);
-  show("userArea",!!currentUser);
-  show("reservationArea",!!currentUser);
-  show("myArea",!!currentUser);
-  show("historyArea",!!currentUser);
-
-  if(!currentUser) return;
-
-  const {data:profile,error:profileError}=await supabaseClient
+  const { data: profile, error: profileError } = await db
     .from("profiles")
     .select("display_name")
-    .eq("id",currentUser.id)
+    .eq("id", currentUser.id)
     .maybeSingle();
 
-  if(profileError) {
-    alert("プロフィール取得エラー："+profileError.message);
-    return;
+  if (profileError) {
+    document.getElementById("userStatus").textContent =
+      "プロフィールを取得できませんでした。";
+    document.getElementById("reserveButton").disabled = true;
+    return false;
   }
 
-  document.getElementById("userName").textContent=
-    profile?.display_name || "ユーザー";
+  currentDisplayName =
+    profile?.display_name?.trim() ||
+    currentUser.user_metadata?.display_name ||
+    "";
 
-  await loadCalendar();
-  await loadMyReservation();
-  await loadHistory();
+  if (!currentDisplayName) {
+    document.getElementById("userStatus").textContent =
+      "ユーザー名が登録されていません。プロフィールを設定してください。";
+    document.getElementById("reserveButton").disabled = true;
+    return false;
+  }
+
+  document.getElementById("userStatus").innerHTML =
+    `ログイン中：<span class="user-name">${escapeHTML(currentDisplayName)}</span>`;
+
+  document.getElementById("reserveButton").disabled = false;
+  return true;
 }
 
-// ========================================
-// 予約カレンダー
-// ========================================
+async function getReservations(date) {
+  const { data, error } = await db
+    .from("time_slot_reservations")
+    .select("id, reservation_date, slot_start, user_id, display_name")
+    .eq("reservation_date", date)
+    .order("slot_start", { ascending: true });
 
-async function loadCalendar() {
-
-  const {data,error}=await supabaseClient
-    .from("daily_reservations")
-    .select("*")
-    .gte("reservation_date",today())
-    .lte("reservation_date",endDate())
-    .order("reservation_date");
-
-  const area=document.getElementById("calendar");
-
-  if(error) {
-    area.textContent="予約情報を取得できません："+error.message;
-    return;
+  if (error) {
+    throw error;
   }
 
-  const reservations={};
-
-  (data||[]).forEach(r=>{
-    reservations[r.reservation_date]=r;
-  });
-
-  area.innerHTML="";
-
-  const start=new Date();
-  const end=new Date();
-  end.setMonth(end.getMonth()+2);
-
-  for(
-    let d=new Date(start);
-    d<=end;
-    d.setDate(d.getDate()+1)
-  ) {
-
-    const date=formatDate(d);
-    const reservation=reservations[date];
-
-    const div=document.createElement("div");
-    div.className="day";
-
-    const title=document.createElement("h3");
-    title.textContent=dateText(date);
-
-    const status=document.createElement("p");
-
-    if(reservation) {
-
-      status.className="reserved";
-      status.textContent="🔴 予約済み";
-
-      const owner=document.createElement("p");
-      owner.textContent="予約者："+reservation.display_name;
-
-      div.append(title,status,owner);
-
-    } else {
-
-      status.className="available";
-      status.textContent="🟢 予約受付中";
-
-      const btn=document.createElement("button");
-      btn.textContent="この日を予約する";
-      btn.onclick=()=>reserve(date);
-
-      div.append(title,status,btn);
-    }
-
-    area.appendChild(div);
-  }
+  return data || [];
 }
 
-// ========================================
-// 予約実行
-// ========================================
+async function loadSlotList() {
+  const date = dateInput.value;
 
-async function reserve(date) {
-
-  if(!confirm(dateText(date)+"を予約しますか？")) return;
-
-  const {data,error}=await supabaseClient.rpc(
-    "reserve_day",
-    {p_date:date}
-  );
-
-  if(error) {
-    alert("予約エラー："+error.message);
+  if (!date) {
+    slotList.textContent = "予約日を選択してください。";
     return;
   }
 
-  const result=data?.[0];
+  slotList.innerHTML = "読み込み中...";
 
-  if(result?.success) {
-    alert("🎉 予約成功！\n"+dateText(date));
-  } else {
-    alert("予約できませんでした。\n"+(result?.message||"予約済みです"));
-  }
+  try {
+    const reservations = await getReservations(date);
 
-  await refresh();
-}
+    const byTime = new Map(
+      reservations.map(item => [
+        item.slot_start.slice(0, 5),
+        item
+      ])
+    );
 
-// ========================================
-// 自分の予約
-// ========================================
+    slotList.innerHTML = "";
 
-async function loadMyReservation() {
+    SLOT_STARTS.forEach(start => {
+      const reservation = byTime.get(start);
+      const box = document.createElement("div");
 
-  const {data,error}=await supabaseClient
-    .from("daily_reservations")
-    .select("*")
-    .eq("user_id",currentUser.id)
-    .gte("reservation_date",today())
-    .order("reservation_date");
+      box.className = "slot" + (reservation ? " reserved" : "");
 
-  const area=document.getElementById("myReservation");
-  area.innerHTML="";
-
-  if(error || !data || data.length===0) {
-    area.textContent="現在予約はありません。";
-    return;
-  }
-
-  data.forEach(r=>{
-
-    const div=document.createElement("div");
-    div.className="day";
-
-    const title=document.createElement("h3");
-    title.textContent=dateText(r.reservation_date);
-
-    const btn=document.createElement("button");
-    btn.className="cancel";
-    btn.textContent="予約をキャンセル";
-
-    btn.onclick=async()=>{
-
-      if(!confirm("予約をキャンセルしますか？")) return;
-
-      const {data:result,error}=await supabaseClient.rpc(
-        "cancel_day",
-        {p_date:r.reservation_date}
-      );
-
-      if(error) {
-        alert(error.message);
-        return;
+      if (reservation) {
+        box.innerHTML = `
+          <div class="slot-time">
+            ${start} ～ ${endTime(start)}
+          </div>
+          <div class="slot-detail">60分予約・10分入れ替え</div>
+          <div class="status full">予約済み</div>
+          <div>予約者：${escapeHTML(reservation.display_name)}</div>
+        `;
+      } else {
+        box.innerHTML = `
+          <div class="slot-time">
+            ${start} ～ ${endTime(start)}
+          </div>
+          <div class="slot-detail">60分予約・10分入れ替え</div>
+          <div class="status">予約可能</div>
+        `;
       }
 
-      alert(result ? "キャンセルしました" : "キャンセルできませんでした");
+      slotList.appendChild(box);
+    });
 
-      await refresh();
-    };
-
-    div.append(title,btn);
-    area.appendChild(div);
-  });
+    timeSelect.value = "";
+  } catch (error) {
+    slotList.textContent =
+      "予約状況を取得できませんでした：" + error.message;
+  }
 }
 
-// ========================================
-// 全体の予約状況
-// ========================================
+async function reserve() {
+  clearMessage();
 
-async function loadHistory() {
-
-  const {data,error}=await supabaseClient
-    .from("daily_reservations")
-    .select("*")
-    .gte("reservation_date",today())
-    .order("reservation_date");
-
-  const area=document.getElementById("history");
-  area.innerHTML="";
-
-  if(error) {
-    area.textContent="取得エラー："+error.message;
+  if (!currentUser) {
+    showMessage("ログインしてください。", "error");
     return;
   }
 
-  if(!data || data.length===0) {
-    area.textContent="まだ予約はありません。";
+  const date = dateInput.value;
+  const start = timeSelect.value;
+
+  if (!date || !start) {
+    showMessage("予約日と予約時間を選択してください。", "error");
     return;
   }
 
-  data.forEach(r=>{
+  const today = localDateString(new Date());
+  const maxDate = localDateString(addMonths(new Date(), 2));
 
-    const div=document.createElement("div");
-    div.className="day";
+  if (date < today || date > maxDate) {
+    showMessage("予約できるのは今日から2か月先までです。", "error");
+    return;
+  }
 
-    const title=document.createElement("h3");
-    title.textContent=dateText(r.reservation_date);
+  const button = document.getElementById("reserveButton");
+  button.disabled = true;
+  button.textContent = "予約処理中...";
 
-    const owner=document.createElement("p");
-    owner.textContent="予約者："+r.display_name;
+  try {
+    const { data, error } = await db.rpc("reserve_time_slot", {
+      p_date: date,
+      p_start_time: start
+    });
 
-    div.append(title,owner);
-    area.appendChild(div);
+    if (error) {
+      throw error;
+    }
+
+    showMessage(
+      `${date} ${start}～${endTime(start)} の予約が完了しました。`,
+      "success"
+    );
+
+    await refreshAll();
+  } catch (error) {
+    showMessage(
+      error.message || "予約に失敗しました。",
+      "error"
+    );
+    await refreshAll();
+  } finally {
+    button.disabled = !currentUser;
+    button.textContent = "この内容で予約する";
+  }
+}
+
+async function loadAllReservations() {
+  const area = document.getElementById("allReservations");
+
+  const today = localDateString(new Date());
+  const maxDate = localDateString(addMonths(new Date(), 2));
+
+  const { data, error } = await db
+    .from("time_slot_reservations")
+    .select("id, reservation_date, slot_start, display_name")
+    .gte("reservation_date", today)
+    .lte("reservation_date", maxDate)
+    .order("reservation_date", { ascending: true })
+    .order("slot_start", { ascending: true });
+
+  if (error) {
+    area.textContent =
+      "予約一覧を取得できませんでした：" + error.message;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    area.innerHTML = '<p class="empty">現在、予約はありません。</p>';
+    return;
+  }
+
+  area.innerHTML = data.map(item => `
+    <div class="reservation-row">
+      <div class="reservation-info">
+        <strong>${escapeHTML(item.reservation_date)}</strong><br>
+        ${escapeHTML(item.slot_start.slice(0, 5))}
+        ～ ${endTime(item.slot_start.slice(0, 5))}<br>
+        予約者：${escapeHTML(item.display_name)}
+      </div>
+    </div>
+  `).join("");
+}
+
+async function loadMyReservations() {
+  const area = document.getElementById("myReservations");
+
+  if (!currentUser) {
+    area.innerHTML =
+      '<p class="empty">ログインすると自分の予約を確認できます。</p>';
+    return;
+  }
+
+  const today = localDateString(new Date());
+  const maxDate = localDateString(addMonths(new Date(), 2));
+
+  const { data, error } = await db
+    .from("time_slot_reservations")
+    .select("id, reservation_date, slot_start, display_name")
+    .eq("user_id", currentUser.id)
+    .gte("reservation_date", today)
+    .lte("reservation_date", maxDate)
+    .order("reservation_date", { ascending: true })
+    .order("slot_start", { ascending: true });
+
+  if (error) {
+    area.textContent =
+      "自分の予約を取得できませんでした：" + error.message;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    area.innerHTML =
+      '<p class="empty">現在、自分の予約はありません。</p>';
+    return;
+  }
+
+  area.innerHTML = data.map(item => `
+    <div class="reservation-row">
+      <div class="reservation-info">
+        <strong>${escapeHTML(item.reservation_date)}</strong><br>
+        ${escapeHTML(item.slot_start.slice(0, 5))}
+        ～ ${endTime(item.slot_start.slice(0, 5))}
+      </div>
+      <button
+        class="cancel-button"
+        data-id="${escapeHTML(item.id)}"
+        type="button"
+      >キャンセル</button>
+    </div>
+  `).join("");
+
+  area.querySelectorAll(".cancel-button").forEach(button => {
+    button.addEventListener("click", () => {
+      cancelReservation(button.dataset.id);
+    });
   });
 }
 
-// ========================================
-// 更新
-// ========================================
+async function cancelReservation(id) {
+  if (!confirm("この予約をキャンセルしますか？")) {
+    return;
+  }
 
-async function refresh() {
-  await loadCalendar();
-  await loadMyReservation();
-  await loadHistory();
+  try {
+    const { error } = await db.rpc("cancel_time_slot", {
+      p_reservation_id: id
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    showMessage("予約をキャンセルしました。", "success");
+    await refreshAll();
+  } catch (error) {
+    showMessage(
+      error.message || "キャンセルできませんでした。",
+      "error"
+    );
+  }
 }
 
-// ========================================
-// 起動
-// ========================================
+async function refreshAll() {
+  await Promise.all([
+    loadSlotList(),
+    loadAllReservations(),
+    loadMyReservations()
+  ]);
+}
 
-supabaseClient.auth.onAuthStateChange(()=>{
-  setTimeout(initialize,0);
+dateInput.addEventListener("change", async () => {
+  clearMessage();
+  await loadSlotList();
 });
 
-initialize();
+document.getElementById("reserveButton")
+  .addEventListener("click", reserve);
 
+async function start() {
+  initializeDateInput();
+  initializeTimeSelect();
+
+  const loggedIn = await loadUser();
+
+  if (loggedIn) {
+    await refreshAll();
+  } else {
+    slotList.textContent = "ログイン後に予約状況を表示します。";
+    document.getElementById("allReservations").textContent =
+      "ログイン後に予約一覧を表示します。";
+    document.getElementById("myReservations").textContent =
+      "ログイン後に自分の予約を表示します。";
+  }
+
+  db.auth.onAuthStateChange(async () => {
+    await loadUser();
+    await refreshAll();
+  });
+}
+
+start();
 </script>
 
 </body>
